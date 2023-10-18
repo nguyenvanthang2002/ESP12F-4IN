@@ -255,6 +255,41 @@ void setClock() {
     now = time(nullptr);
   }
 }
+void updateRead(int pastWiFiCredential){
+  WiFiCredentials credentials = myObject.readWiFiCredentials(pastWiFiCredential);
+  if (deBug == 1)Serial.println("pastWiFiCredential");
+  if (deBug == 1)Serial.print("WiFi ");
+  if (deBug == 1)Serial.print(pastWiFiCredential + 1);
+  if (deBug == 1)Serial.print(" - SSID: ");
+  if (deBug == 1)Serial.print(credentials.ssid);
+  if (deBug == 1)Serial.print(", Password: ");
+  if (deBug == 1)Serial.println(credentials.password);
+  WiFi.begin(credentials.ssid, credentials.password);
+  unsigned long connectionStartTime = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - connectionStartTime < 8000) {
+    delay(200);
+    if (deBug == 1)Serial.println("Connecting to Wi-Fi...");
+    static bool ledState = LOW;
+digitalWrite(13, ledState);
+ledState = (ledState == LOW) ? HIGH : LOW;
+  }
+  
+  if (WiFi.status() == WL_CONNECTED) {
+  
+    myObject.PusleSound(10, 2000);
+   if (deBug == 1) Serial.print("Update");
+   if (deBug == 1) Serial.println(credentials.ssid);
+   if (deBug == 1) Serial.println("Connected to Wi-Fi Update");
+   WiFi.mode(WIFI_STA);
+   setClock(); 
+   FirmwareUpdate(); 
+    loopCount = 1;
+    isWifiConnected = true;
+  } else {
+    if (deBug == 1)Serial.println("Failed to connect to Wi-Fi");
+  }
+
+}
 void setup() {
   // Kết nối đến mạng Wi-Fi mặc định
   //WiFi.begin(defaultSSID, defaultPassword);
@@ -273,11 +308,9 @@ void setup() {
   pinMode(in4, INPUT);
   pinMode(13, OUTPUT);
   digitalWrite(13, LOW); 
+
   currentWiFiCredential = myObject.readCurrentWiFiCredential();
-  if (deBug == 1)Serial.print("ESP8266 http update, current version: ");
-
-  if (deBug == 1)Serial.print("Connecting to WiFi");
-
+  updateRead(currentWiFiCredential-1);  
     WiFi.mode(WIFI_AP);
     WiFi.softAP(apSSID, apPassword);
   if (WiFi.status() != WL_CONNECTED) {
@@ -307,9 +340,9 @@ void loop() {
   //WiFi.mode(WIFI_STA);
    server.handleClient();
    myObject.saveCurrentWiFiCredential(currentWiFiCredential);
-static unsigned long startTime = millis();
-unsigned long currentTime = millis();
-static bool ledOn = true;
+   static unsigned long startTime = millis();
+   unsigned long currentTime = millis();
+   static bool ledOn = true;
 if (WiFi.status() != WL_CONNECTED) {
   loopCount = 0;
   WiFi.mode(WIFI_AP);
