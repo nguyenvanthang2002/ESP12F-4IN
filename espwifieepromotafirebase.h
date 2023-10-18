@@ -25,10 +25,7 @@ struct WiFiCredentials {
 extern FirebaseData firebaseData;
 extern int deBug;
 extern String apSuffix;
-extern int previousValueIn1;
-extern int previousValueIn2;
-extern int previousValueIn3;
-extern int previousValueIn4;
+
 extern String macAddress;
 
 class myClass {
@@ -56,7 +53,11 @@ class myClass {
          void onoffin4(int valueIn4);
 
 
-private:
+      private:
+        int previousValueIn1 = -1;
+        int previousValueIn2 = -1;
+        int previousValueIn3 = -1;
+        int previousValueIn4 = -1;
 
 };
 

@@ -41,10 +41,7 @@ bool Status = false;
 bool isWifiConnected = false;
 int loopCount = 0;
 String timeCurent;
-int previousValueIn1 = -1;
-int previousValueIn2 = -1;
-int previousValueIn3 = -1;
-int previousValueIn4 = -1;
+
 
 /////////////////
 
@@ -152,7 +149,7 @@ void handleRoot() {
     WiFiCredentials credentials;
     strncpy(credentials.ssid, wifiSSID.c_str(), sizeof(credentials.ssid));
     strncpy(credentials.password, wifiPassword.c_str(), sizeof(credentials.password));
-    myObject.saveWiFiCredentials(credentials, currentWiFiCredential);
+   // myObject.saveWiFiCredentials(credentials, currentWiFiCredential);
 
     // Chuyển sang mật khẩu Wi-Fi mới trong danh sách
     if (deBug == 1)Serial.print("Saved Wi-Fi credentials - SSID: ");
@@ -160,10 +157,10 @@ void handleRoot() {
     if (deBug == 1)Serial.print("Saved Wi-Fi credentials - Password: ");
     if (deBug == 1)Serial.println(credentials.password);
 
-    currentWiFiCredential++;
-    if (currentWiFiCredential >= maxWiFiCredentials) {
-      currentWiFiCredential = 0; // Quay lại mật khẩu đầu tiên nếu đã hết danh sách
-    }
+    //currentWiFiCredential++;
+    //if (currentWiFiCredential >= maxWiFiCredentials) {
+    // // currentWiFiCredential = 0; // Quay lại mật khẩu đầu tiên nếu đã hết danh sách
+    //}
 
     WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
     unsigned long startTime = millis();
@@ -176,6 +173,11 @@ void handleRoot() {
     }
     
     if (WiFi.status() == WL_CONNECTED) {
+      myObject.saveWiFiCredentials(credentials, currentWiFiCredential);
+       currentWiFiCredential++;
+      if (currentWiFiCredential >= maxWiFiCredentials) {
+      currentWiFiCredential = 0; // Quay lại mật khẩu đầu tiên nếu đã hết danh sách
+       }
       loopCount = 1;
       if (deBug == 1)Serial.println("Connected to Wi-Fi");
       isWifiConnected = true;
@@ -196,7 +198,8 @@ void handleRoot() {
    if (deBug == 1) Serial.print("Received data: ");
  if (deBug == 1) Serial.println(requestData);
 
-  }}
+  }
+  }
   
 }
 void handleMacAddress() {
@@ -241,12 +244,25 @@ ledState = (ledState == LOW) ? HIGH : LOW;
   }
 }
 }
-
+void setClock() {
+   // Set time via NTP, as required for x.509 validation
+  configTime(3 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+  Serial.print("Waiting for NTP time sync: ");
+  time_t now = time(nullptr);
+  while (now < 8 * 3600 * 2) {
+    delay(500);
+    Serial.println(".");
+    now = time(nullptr);
+  }
+}
 void setup() {
   // Kết nối đến mạng Wi-Fi mặc định
   //WiFi.begin(defaultSSID, defaultPassword);
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   Serial.begin(9600);
+  Serial.println("");
+  Serial.println("Start");
+  WiFi.mode(WIFI_STA);
   EEPROM.begin(512);
   system_update_cpu_freq(SYS_CPU_80MHZ);
   pinMode(RL, OUTPUT);
@@ -266,7 +282,7 @@ void setup() {
     WiFi.softAP(apSSID, apPassword);
   if (WiFi.status() != WL_CONNECTED) {
     if (deBug == 1)Serial.println("Connected to WiFi false ");
-    WiFi.softAP(apSSID, apPassword);
+    //WiFi.softAP(apSSID, apPassword);
   }else myObject.PusleSound(10, 2000);
 
   if (deBug == 1)Serial.print("Địa chỉ IP truy cập của ESP8266: ");
@@ -288,7 +304,7 @@ void setup() {
 }
 
 void loop() {
-  WiFi.mode(WIFI_STA);
+  //WiFi.mode(WIFI_STA);
    server.handleClient();
    myObject.saveCurrentWiFiCredential(currentWiFiCredential);
 static unsigned long startTime = millis();

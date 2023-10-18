@@ -5,6 +5,9 @@
 #include <EEPROM.h>
 #include <ESP8266HTTPClient.h>
 #include <ESP8266httpUpdate.h>
+#include <WiFiClientSecure.h>//
+#include <CertStoreBearSSL.h>//
+#include <time.h>//
 # include "Arduino.h"
 # include "espwifieepromotafirebase.h"
 
@@ -33,6 +36,8 @@
   }
   return firebaseData.stringData();
   }
+
+//////////////////////////////////////////////////////
 
   void myClass::saveCurrentWiFiCredential(int currentCredential){
     int address = 300;
