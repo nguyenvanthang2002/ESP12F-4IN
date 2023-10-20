@@ -90,7 +90,7 @@ void FirmwareUpdate()
     return;
   }
    Serial.println("New firmware detected");
-    ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW); 
+    ESPhttpUpdate.setLedPin(13, LOW); 
     t_httpUpdate_return ret = ESPhttpUpdate.update(client, URL_fw_Bin);
         
     switch (ret) {
