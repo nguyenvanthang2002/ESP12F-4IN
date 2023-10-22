@@ -40,12 +40,12 @@
 //////////////////////////////////////////////////////
 
   void myClass::saveCurrentWiFiCredential(int currentCredential){
-    int address = 300;
+    int address = 481;
     EEPROM.put(address, currentCredential);
     EEPROM.commit();
 }
    int myClass::readCurrentWiFiCredential(){
-    int address = 300;
+    int address = 481;
     int currentCredential;
     int* currentCredentialPtr = &currentCredential; // Sử dụng con trỏ để truyền địa chỉ của biến
     EEPROM.get(address, *currentCredentialPtr); // Truyền địa chỉ của biến
@@ -66,7 +66,7 @@ WiFiCredentials myClass::readWiFiCredentials(int index) {
   return credentials;
 }
 void myClass::printSavedWiFiCredentials() {
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 5; i++) {
     WiFiCredentials credentials = readWiFiCredentials(i);
     Serial.print("WiFi ");
     Serial.print(i + 1);

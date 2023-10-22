@@ -1,6 +1,6 @@
 # include "espwifieepromotafirebase.h"
 BearSSL::CertStore certStore;
-const String FirmwareVer={"1.7"}; //
+
 #define URL_fw_Version "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/bin_version.txt"
 #define URL_fw_Bin "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/onlineota.bin"
 const char* host = "raw.githubusercontent.com";
@@ -41,7 +41,8 @@ bool Status = false;
 bool isWifiConnected = false;
 int loopCount = 0;
 String timeCurent;
-
+String currentVersion = "1.0.1";
+String readVersionNew1;
 
 /////////////////
 
@@ -73,9 +74,9 @@ ESP8266WebServer server(80);  // Tạo một đối tượng máy chủ trên c�
 
 /////////////////////////////////////
 
-const int maxWiFiCredentials = 6; // Số lượng tối đa của mật khẩu Wi-Fi
+const int maxWiFiCredentials = 5; // Số lượng tối đa của mật khẩu Wi-Fi
 WiFiCredentials wifiCredentials[maxWiFiCredentials]; // Danh sách mật khẩu Wi-Fi
-int currentWiFiCredential ; // Chỉ số của mật khẩu Wi-Fi hiện tại
+int currentWiFiCredential=0; // Chỉ số của mật khẩu Wi-Fi hiện tại
 
 /////////////////////////////////////////
 
@@ -90,7 +91,7 @@ void FirmwareUpdate()
     return;
   }
    Serial.println("New firmware detected");
-    ESPhttpUpdate.setLedPin(13, LOW); 
+    ESPhttpUpdate.setLedPin(2, LOW); 
     t_httpUpdate_return ret = ESPhttpUpdate.update(client, URL_fw_Bin);
         
     switch (ret) {
@@ -290,6 +291,28 @@ ledState = (ledState == LOW) ? HIGH : LOW;
   }
 
 }
+void writeStringToEEPROM(int addr, const String &data) {
+  for (int i = 0; i < data.length(); i++) {
+    EEPROM.write(addr + i, data[i]);
+  }
+  EEPROM.write(addr + data.length(), '\0'); // Kết thúc chuỗi bằng ký tự null (0)
+  EEPROM.commit();
+}
+
+String readStringFromEEPROM(int addr) {
+  String result = "";
+  char character;
+  int i = 0;
+  while (true) {
+    character = EEPROM.read(addr + i);
+    if (character == '\0') {
+      break;
+    }
+    result += character;
+    i++;
+  }
+  return result;
+}
 void setup() {
   // Kết nối đến mạng Wi-Fi mặc định
   //WiFi.begin(defaultSSID, defaultPassword);
@@ -299,6 +322,7 @@ void setup() {
   Serial.println("Start");
   WiFi.mode(WIFI_STA);
   EEPROM.begin(512);
+  EEPROM.commit();
   system_update_cpu_freq(SYS_CPU_80MHZ);
   pinMode(RL, OUTPUT);
   pinMode(bSound, OUTPUT);
@@ -308,9 +332,29 @@ void setup() {
   pinMode(in4, INPUT);
   pinMode(13, OUTPUT);
   digitalWrite(13, LOW); 
-
+    Serial.print("CURRENT VERSION: ");
+    Serial.println(currentVersion);
   currentWiFiCredential = myObject.readCurrentWiFiCredential();
-  updateRead(currentWiFiCredential-1);  
+  String readUpdate = readStringFromEEPROM(506);
+  Serial.print("Dữ liệu từ EEPROM 506 : ");
+  Serial.println(readUpdate);
+  String readVersionNew = readStringFromEEPROM(500);
+    Serial.print("Dữ liệu từ EEPROM 500: ");
+    Serial.println(readVersionNew);
+
+  if(readUpdate.equals("update")){
+   if(currentVersion.equals(readVersionNew)){
+    if (deBug == 1) Serial.print("UPDATED VERSION: ");
+    if (deBug == 1) Serial.println(readVersionNew);
+}
+   else {
+    if (deBug == 1) Serial.print("UPDATING VERSION: ");
+    if (deBug == 1) Serial.println(readVersionNew);
+    updateRead(currentWiFiCredential-1);
+}
+} else{Serial.println("NO Received Update FROM Master");}
+
+  
     WiFi.mode(WIFI_AP);
     WiFi.softAP(apSSID, apPassword);
   if (WiFi.status() != WL_CONNECTED) {
@@ -349,6 +393,9 @@ if (WiFi.status() != WL_CONNECTED) {
   connectToWiFi();
   WiFi.softAP(apSSID, apPassword);
 } 
+//readVersionNew1 = readStringFromEEPROM(500);
+//Serial.print("Dữ liệu từ EEPROM: ");
+//Serial.println(readVersionNew1);
 int valueIn1 = digitalRead(in1);
 myObject.onoffin1(valueIn1);
 int valueIn2 = digitalRead(in2);
@@ -381,12 +428,50 @@ void updateCallback(StreamData data) {
   int value2 = data.intData();
   if (deBug == 1)Serial.print("Received value for /Update: ");
   if (deBug == 1)Serial.println(value2);
-  if (value2==1){
-String url = myObject.readFirebaseString("/URL");
-  if (deBug == 1)Serial.print("URL value: ");
-  if (deBug == 1)Serial.println(url);
-  FirmwareUpdate();
-}else {if (deBug == 1)Serial.println(" NO Received Update FROM Master ");}
+  if (value2 ==1){
+ // String url = myObject.readFirebaseString("/URL");
+  //if (deBug == 1)Serial.print("URL value: ");
+  //if (deBug == 1)Serial.println(url);
+   String update = "update" ;
+    writeStringToEEPROM(506, update);
+    //String readUpdate = readStringFromEEPROM(506);
+    //Serial.print("Dữ liệu từ EEPROM 506 : ");
+    //Serial.println(readUpdate);
+    String versionNew = myObject.readFirebaseString("/VERSION");
+    int stringLength = versionNew.length();
+    int byteSize = stringLength * sizeof(char);
+    Serial.print("Số lượng ký tự trong chuỗi: ");
+    Serial.println(stringLength);
+    Serial.print("Kích thước của chuỗi trong byte: ");
+    Serial.println(byteSize);
+    ///
+     writeStringToEEPROM(500, versionNew);
+   // String readVersionNew = readStringFromEEPROM(482);
+   // Serial.print("Dữ liệu từ EEPROM: ");
+   // Serial.println(readVersionNew);
+    //
+    //writeStringToEEPROM(488, url);
+   // String readUrl = readStringFromEEPROM(488);
+   // Serial.print("Dữ liệu từ EEPROM: ");
+   // Serial.println(readUrl);
+
+  if(currentVersion == versionNew ){
+   if (deBug == 1) Serial.print("UPDATED VERSION: ");
+   if (deBug == 1) Serial.println(versionNew);
+  }
+  else {
+  //currentVersion = version;
+   String readVersionNew = readStringFromEEPROM(482);
+  if (deBug == 1)Serial.print("UPDATE VERSION: ");
+  if (deBug == 1)Serial.println(versionNew);
+  
+  }
+  
+}else {
+   String noUpdate = "noUdte" ;
+    writeStringToEEPROM(506, noUpdate);
+  if (deBug == 1)Serial.println(" NO Received Update FROM Master ");
+  }
 }
 void streamTimeoutCallback(bool timeout) {
  
