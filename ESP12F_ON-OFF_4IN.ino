@@ -1,5 +1,11 @@
 # include "espwifieepromotafirebase.h"
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 BearSSL::CertStore certStore;
+
+const long utcOffsetInSeconds = 7 * 3600; // UTC+7 (Hanoi, Bangkok, Jakarta)
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
 #define URL_fw_Version "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/bin_version.txt"
 #define URL_fw_Bin "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/onlineota.bin"
@@ -377,6 +383,7 @@ void setup() {
   Firebase.beginStream(updateStream, "/Update");
 
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  timeClient.begin();
 //////////////////////////////////////////////////////////////////////////////////////////
 }
 
@@ -393,6 +400,14 @@ if (WiFi.status() != WL_CONNECTED) {
   connectToWiFi();
   WiFi.softAP(apSSID, apPassword);
 } 
+ // Lấy thời gian từ máy chủ NTP
+  timeClient.update();
+
+  // In ra thời gian thực
+  Serial.println(timeClient.getFormattedTime());
+
+  // Chờ 1 giây rồi lấy thời gian tiếp theo
+  delay(1000);
 //readVersionNew1 = readStringFromEEPROM(500);
 //Serial.print("Dữ liệu từ EEPROM: ");
 //Serial.println(readVersionNew1);
