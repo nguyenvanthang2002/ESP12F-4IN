@@ -7,11 +7,14 @@ const long utcOffsetInSeconds = 7 * 3600; // UTC+7 (Hanoi, Bangkok, Jakarta)
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
-#define URL_fw_Version "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/bin_version.txt"
-#define URL_fw_Bin "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/onlineota.bin"
+String currentVersion = "1.0.2";
+//#define URL_fw_Version "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/bin_version.txt"
+//#define URL_fw_Bin "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/" + currentVersion + ".bin"
+
 const char* host = "raw.githubusercontent.com";
 const int httpsPort = 443;
-const char trustRoot[] PROGMEM = R"EOF(
+///////////////////////////////////////////////
+ const char trustRoot[] PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
 MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh
 MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
@@ -47,7 +50,7 @@ bool Status = false;
 bool isWifiConnected = false;
 int loopCount = 0;
 String timeCurent;
-String currentVersion = "1.0.1";
+
 String readVersionNew1;
 
 /////////////////
@@ -88,7 +91,7 @@ int currentWiFiCredential=0; // Chỉ số của mật khẩu Wi-Fi hiện tại
 
 
 ////////////////////
-void FirmwareUpdate()
+void FirmwareUpdate(String URL_fw_Bin)
 {  
   WiFiClientSecure client;
   client.setTrustAnchors(&cert);
@@ -262,7 +265,7 @@ void setClock() {
     now = time(nullptr);
   }
 }
-void updateRead(int pastWiFiCredential){
+void updateRead(int pastWiFiCredential,String URL_fw_Bin){
   WiFiCredentials credentials = myObject.readWiFiCredentials(pastWiFiCredential);
   if (deBug == 1)Serial.println("pastWiFiCredential");
   if (deBug == 1)Serial.print("WiFi ");
@@ -289,7 +292,7 @@ ledState = (ledState == LOW) ? HIGH : LOW;
    if (deBug == 1) Serial.println("Connected to Wi-Fi Update");
    WiFi.mode(WIFI_STA);
    setClock(); 
-   FirmwareUpdate(); 
+   FirmwareUpdate(URL_fw_Bin); 
     loopCount = 1;
     isWifiConnected = true;
   } else {
@@ -356,11 +359,11 @@ void setup() {
    else {
     if (deBug == 1) Serial.print("UPDATING VERSION: ");
     if (deBug == 1) Serial.println(readVersionNew);
-    updateRead(currentWiFiCredential-1);
+    String URL_fw_Bin =  "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/" +readVersionNew+ ".bin";
+    if (deBug == 1) Serial.println(URL_fw_Bin);
+    updateRead(currentWiFiCredential-1,URL_fw_Bin);
 }
-} else{Serial.println("NO Received Update FROM Master");}
-
-  
+} else{Serial.println("NO Received Update FROM Master");} 
     WiFi.mode(WIFI_AP);
     WiFi.softAP(apSSID, apPassword);
   if (WiFi.status() != WL_CONNECTED) {
@@ -404,10 +407,10 @@ if (WiFi.status() != WL_CONNECTED) {
   timeClient.update();
 
   // In ra thời gian thực
-  Serial.println(timeClient.getFormattedTime());
+ // Serial.println(timeClient.getFormattedTime());
 
   // Chờ 1 giây rồi lấy thời gian tiếp theo
-  delay(1000);
+  //delay(2000);
 //readVersionNew1 = readStringFromEEPROM(500);
 //Serial.print("Dữ liệu từ EEPROM: ");
 //Serial.println(readVersionNew1);
@@ -423,6 +426,7 @@ myObject.onoffin4(valueIn4);
     if (currentTime - startTime >= 3000) {
       // Đã đủ 500ms, đảo trạng thái của LED
       ledOn = !ledOn;
+       Serial.println(timeClient.getFormattedTime());
       digitalWrite(13, ledOn ? HIGH : LOW);
       startTime = currentTime;
   } 
@@ -476,9 +480,11 @@ void updateCallback(StreamData data) {
   }
   else {
   //currentVersion = version;
-   String readVersionNew = readStringFromEEPROM(482);
-  if (deBug == 1)Serial.print("UPDATE VERSION: ");
+  // String readVersionNew = readStringFromEEPROM(482);
+  if (deBug == 1)Serial.print("UPDATING VERSION: ");
   if (deBug == 1)Serial.println(versionNew);
+  
+  ESP.restart();
   
   }
   
