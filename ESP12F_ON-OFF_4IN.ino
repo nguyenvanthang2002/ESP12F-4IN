@@ -7,7 +7,7 @@ const long utcOffsetInSeconds = 7 * 3600; // UTC+7 (Hanoi, Bangkok, Jakarta)
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
-String currentVersion = "1.0.2";
+String currentVersion = "1.0.3";
 //#define URL_fw_Version "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/bin_version.txt"
 //#define URL_fw_Bin "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/" + currentVersion + ".bin"
 
@@ -50,6 +50,7 @@ bool Status = false;
 bool isWifiConnected = false;
 int loopCount = 0;
 String timeCurent;
+int updateWifi;
 
 String readVersionNew1;
 
@@ -184,10 +185,17 @@ void handleRoot() {
     
     if (WiFi.status() == WL_CONNECTED) {
       myObject.saveWiFiCredentials(credentials, currentWiFiCredential);
+      updateWifi = currentWiFiCredential ; 
+      myObject.saveCurrentWiFiCredential(483,currentWiFiCredential);
+      
+      if (deBug == 1) Serial.print("updateWifi: ");
+      if (deBug == 1) Serial.println(updateWifi);
+//    writeStringToEEPROM(403, updateWifi);
        currentWiFiCredential++;
       if (currentWiFiCredential >= maxWiFiCredentials) {
       currentWiFiCredential = 0; // Quay lại mật khẩu đầu tiên nếu đã hết danh sách
        }
+       myObject.saveCurrentWiFiCredential(481,currentWiFiCredential);
       loopCount = 1;
       if (deBug == 1)Serial.println("Connected to Wi-Fi");
       isWifiConnected = true;
@@ -242,7 +250,14 @@ ledState = (ledState == LOW) ? HIGH : LOW;
   }
   
   if (WiFi.status() == WL_CONNECTED) {
-  
+    updateWifi = i;
+    //EEPROM.put(403, updateWifi);
+    //EEPROM.commit();
+    myObject.saveCurrentWiFiCredential(483,updateWifi);
+   // myObject.saveCurrentWiFiCredential(481,currentWiFiCredential);
+    if (deBug == 1) Serial.print("updateWifi: ");
+   if (deBug == 1) Serial.println(updateWifi);
+  //  writeStringToEEPROM(403, updateWifi);
     myObject.PusleSound(10, 2000);
    if (deBug == 1) Serial.print("Switched to Wi-Fi: ");
    if (deBug == 1) Serial.println(credentials.ssid);
@@ -343,7 +358,15 @@ void setup() {
   digitalWrite(13, LOW); 
     Serial.print("CURRENT VERSION: ");
     Serial.println(currentVersion);
-  currentWiFiCredential = myObject.readCurrentWiFiCredential();
+  currentWiFiCredential = myObject.readCurrentWiFiCredential(481);
+  Serial.print("Dữ liệu từ EEPROM 401: ");
+  Serial.println(currentWiFiCredential);
+  ////
+  
+  updateWifi =  myObject.readCurrentWiFiCredential(483);
+  Serial.print("Dữ liệu từ EEPROM 403: ");
+  Serial.println(updateWifi);
+  ///
   String readUpdate = readStringFromEEPROM(506);
   Serial.print("Dữ liệu từ EEPROM 506 : ");
   Serial.println(readUpdate);
@@ -361,7 +384,7 @@ void setup() {
     if (deBug == 1) Serial.println(readVersionNew);
     String URL_fw_Bin =  "https://raw.githubusercontent.com/nguyenvanthang2002/esp-12f-update-4in-from-nvt/master/" +readVersionNew+ ".bin";
     if (deBug == 1) Serial.println(URL_fw_Bin);
-    updateRead(currentWiFiCredential-1,URL_fw_Bin);
+    updateRead(updateWifi,URL_fw_Bin);
 }
 } else{Serial.println("NO Received Update FROM Master");} 
     WiFi.mode(WIFI_AP);
@@ -393,7 +416,7 @@ void setup() {
 void loop() {
   //WiFi.mode(WIFI_STA);
    server.handleClient();
-   myObject.saveCurrentWiFiCredential(currentWiFiCredential);
+  // myObject.saveCurrentWiFiCredential(481,currentWiFiCredential);
    static unsigned long startTime = millis();
    unsigned long currentTime = millis();
    static bool ledOn = true;

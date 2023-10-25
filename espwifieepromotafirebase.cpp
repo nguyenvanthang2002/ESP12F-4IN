@@ -39,13 +39,13 @@
 
 //////////////////////////////////////////////////////
 
-  void myClass::saveCurrentWiFiCredential(int currentCredential){
-    int address = 481;
+  void myClass::saveCurrentWiFiCredential(int address , int currentCredential){
+    //int address = 481;
     EEPROM.put(address, currentCredential);
     EEPROM.commit();
 }
-   int myClass::readCurrentWiFiCredential(){
-    int address = 481;
+   int myClass::readCurrentWiFiCredential(int address){
+    //int address = 481;
     int currentCredential;
     int* currentCredentialPtr = &currentCredential; // Sử dụng con trỏ để truyền địa chỉ của biến
     EEPROM.get(address, *currentCredentialPtr); // Truyền địa chỉ của biến

@@ -34,8 +34,8 @@ class myClass {
 
          String readFirebaseString(const String& path);
 
-         void saveCurrentWiFiCredential(int currentCredential);
-         int readCurrentWiFiCredential();
+         void saveCurrentWiFiCredential(int address,int currentCredential);
+         int readCurrentWiFiCredential(int address);
 
          void saveWiFiCredentials(const WiFiCredentials& credentials, int index);
          WiFiCredentials readWiFiCredentials(int index);
